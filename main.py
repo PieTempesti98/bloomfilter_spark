@@ -13,7 +13,7 @@ def m(n):
     return round(- (n * math.log(p)) / (math.log(2) ** 2))
 
 
-def split_input_lines(line):
+def parse_input_lines(line):
     """
 
     :param line:  < movie_id avg_rating num_votes>
@@ -40,7 +40,8 @@ def mapper(lines):
     value = []
     for i in range(k):
         # we use a family of murmur hash map to compute the hash of the movie_id which is our key
-        # we need an integer ranged from 0 to m-1 therefore we need to calculate the module
+        # we change the seed to each hash function
+        # we need in output an integer ranged from 0 to m-1 therefore we need to calculate the module
         position = mmh3.hash(lines[0], i, signed=False) % m(n[key - 1])
         value.append(position)
 
@@ -73,10 +74,10 @@ if __name__ == "__main__":
     sc = SparkContext(master, "BloomFilter")
     text = sc.textFile("data/data.txt")
 
-    parsed_text = text.map(split_input_lines)
+    parsed_text = text.map(parse_input_lines)
     map_output = parsed_text.map(mapper)
 
-    aggregate_positions = map_output.reduceByKey(lambda x, y: set(x + y))
+    aggregate_positions = map_output.reduceByKey(lambda x, y: x + y)
     bloom_filters = aggregate_positions.map(bloom_build)
 
     print(bloom_filters.collect())
