@@ -9,7 +9,7 @@ def is_key_in_bloom(key, bloom_filter):
 
     for i in range(k):
 
-        position = mmh3.hash(key, i, signed=False) % len(bloom_filters)
+        position = mmh3.hash(key, i, signed=False) % len(bloom_filter)
         value = bloom_filter[position]
         # if we have 0 as output we are sure the key is not in the bloom filter and we can return
         if value == 0:

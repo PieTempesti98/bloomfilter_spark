@@ -1,5 +1,3 @@
-import sys
-from pyspark import SparkContext
 import math
 
 p = 0.01
@@ -28,20 +26,11 @@ def parse_input_lines(line):
     return movie_id, avg_rating
 
 
-if __name__ == "__main__":
-
-    master = "local"
-
-    if len(sys.argv) == 2:
-        master = sys.argv[1]
-
-    sc = SparkContext(master, "KeyCounter")
-    text = sc.textFile("data/data.txt")
-
+def compute_m(text, sc):
     parsed_input = text.map(parse_input_lines)
 
-    # magari qua lo cleaniamo e di la usiamo questo già cleanato?
-    # parsed_input.saveAsTextFile("data/data_parsed.txt")
+    # export the already cleaned dataset
+    parsed_input.saveAsTextFile("data/data_parsed.txt")
 
     ones = parsed_input.map(lambda w: (w, 1))
     counts = ones.reduceByKey(lambda x, y: x + y)
@@ -57,3 +46,4 @@ if __name__ == "__main__":
     # broadcast data so it is accessible by all workers
     values = lens.values()
     sc.broadcast(values)
+    return parsed_input, values
