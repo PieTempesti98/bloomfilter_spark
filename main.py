@@ -1,4 +1,6 @@
 import sys
+
+import mmh3
 from pyspark import SparkContext
 
 import bloom_filter
@@ -9,62 +11,70 @@ k = 7
 m = None
 partitions = 4  # number of mappers
 
-if __name__ == "__main__":
+master = "local"
 
-    master = "local"
+if len(sys.argv) == 2:
+    master = sys.argv[1]
 
-    if len(sys.argv) == 2:
-        master = sys.argv[1]
+sc = SparkContext(master, "BloomFilter")
 
-    sc = SparkContext(master, "BloomFilter")
+# import data   4 is the number of partitions
+text = sc.textFile("data/data.txt", 4)
 
-    # import data   4 is the number of partitions
-    text = sc.textFile("data/data.txt", 4)
+# Obtain the parsed dataset and the array of bloom filters' lengths
+text, m = keycount.compute_m(text, sc)
 
+# broadcast the starting variables for the bloom filter creation
+m_bloom = sc.broadcast(m)
+text.persist()
 
-    # Obtain the parsed dataset and the array of bloom filters' lengths
-    text, m = keycount.compute_m(text, sc)
+# perform the mapping and the reducing of each partition
+map_output = text.map(lambda x: bloom_filter.mapper(x, m_bloom.value[int(x[1]) - 1], k))
+aggregate_positions = map_output.reduceByKey(lambda x, y: x + y)
 
-    print("*************BENNY DOUBT****************")
-    # m non è meglio prenderlo broadcast? O anche il dataset?
-    m_bloom = sc.broadcast(m)
-    print("*************BENNY DOUBT****************")
+# aggregate the results for each split
+aggregate_positions = aggregate_positions.reduceByKey(lambda x, y: x + y)
+aggregate_positions = aggregate_positions.sortByKey(ascending=True)
 
-    # if you did not cache the parent DataFrame, then the data for the input DataFrame will be re-fetched each time an
-    # output DataFrame is computed (a hoe on stack overflow said that)
-    # text.cache()
+# compute each bloom filter
+bloom_filters = aggregate_positions.map(lambda x: bloom_filter.bloom_build(x, m_bloom.value[int(x[0]) - 1]))
+bloom_filters.saveAsTextFile("data/bloom_filters.txt")
 
-    # split the input into partitions
-    count = text.count()
-    weights = [count / partitions] * partitions  # ???? non viene count il risultato?
-    splits = text.randomSplit(weights)
+# testing
 
-    split_positions = []
+print("\n\n***** test phase *****")
+filters = bloom_filters.values().collect()
 
-    print("*************BENNY DOUBT****************")
+# print('\n\n')
+#
+# print("bloom filters " + str(filters))
+#
+# print('\n\n')
+false_positives = [0] * 10
+true_negatives = [0] * 10
+for row in text.collect():
+    for i in range(len(filters)):
+        positive = True
+        for j in range(k):
+            position = mmh3.hash(row[0], j, signed=False) % len(filters[i])
+            if not filters[i][position] and i != row[1] - 1:    # true negative for the i-th filter
+                true_negatives[i] += 1
+                positive = False
+                break
+        if positive and i != row[1] - 1:    # false positive for the i-th filter
+            false_positives[i] += 1
 
-    # PARALLELISMO???
+# compute the false positive rates
+fp_rates = []
+index = 1
+for fp, tn in zip(false_positives, true_negatives):
+    fp_rates.append((index, float(fp) / (float(fp + tn))))
+    index += 1
 
-    # perform the mapping and the reducing of each partition
-    for split in splits:
-        # tanto è già cleanato no?
-        parsed_text = split.map(bloom_filter.parse_input_lines).p
-        map_output = parsed_text.map(lambda x: bloom_filter.mapper(x, m[x[0]], k))
-        # map_output = text.map(lambda x: bloom_filter.mapper(x, m_bloom.value[x[0]], k))
-        aggregate_positions = map_output.reduceByKey(lambda x, y: x + y)
-        split_positions.append(aggregate_positions)
+print("\n\n***** results *****\n\n")
+for row in fp_rates:
+    print("false positive rate of " + str(row[0]) + ": " + str(row[1]) + '\n')
 
-    print("*************BENNY DOUBT****************")
-
-    # aggregate the results for each split
-    aggregate_positions = split_positions[0]
-    for i in range(1, len(split_positions)):
-        aggregate_positions.union(split_positions[i])
-    aggregate_positions = aggregate_positions.reduceByKey(lambda x, y: x + y)
-    aggregate_positions = aggregate_positions.sortByKey(ascending=True)
-
-    # compute each bloom filter
-    bloom_filters = aggregate_positions.map(bloom_filter.bloom_build)
-
-    print(bloom_filters.collect())
-    bloom_filters.saveAsTextFile("data/bloom_filters.txt")
+# save as text file
+fp_rdd = sc.parallelize(fp_rates)
+fp_rdd.saveAsTextFile("data/fprates")
