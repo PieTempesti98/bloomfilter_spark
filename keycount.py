@@ -45,5 +45,4 @@ def compute_m(text, sc):
 
     # broadcast data so it is accessible by all workers
     values = lens.values()
-    sc.broadcast(values)
     return parsed_input, values
