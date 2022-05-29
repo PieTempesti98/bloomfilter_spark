@@ -1,10 +1,9 @@
 import math
 
-p = 0.01
 
-
-def find_m(n):
+def find_m(n, p):
     """
+    :param p: false positive rate
     :param n: number of keys in input to a bloom filter
     :return: dimension of the bloom filter
     """
@@ -27,7 +26,7 @@ def parse_input_lines(line):
     return movie_id, avg_rating
 
 
-def compute_m(text, sc):
+def compute_m(text, sc, p):
     parsed_input = text.map(parse_input_lines)
 
     # export the already cleaned dataset
@@ -36,7 +35,7 @@ def compute_m(text, sc):
     ones = parsed_input.map(lambda w: (w[1], 1))
     counts = ones.reduceByKey(lambda x, y: x + y)
     print("******* lens *******\n\n\n" + str(counts.collect()) + "\n\n\n*******************")
-    lens = counts.map(lambda n: find_m(n))
+    lens = counts.map(lambda n: find_m(n, p))
     counts.saveAsTextFile("data/lens")
 
     # get an array built this way:
