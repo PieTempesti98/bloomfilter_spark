@@ -43,11 +43,13 @@ if __name__ == "__main__":
     p_bloom = sc.broadcast(p)
     k_bloom = sc.broadcast(k)
 
+    # cache partition RDD since it's going to be reused later
+    text.persist()
+
     # Obtain the parsed dataset and the array of bloom filters' lengths
     text, m = keycount.compute_m(text, sc, p_bloom.value)
 
     m_bloom = sc.broadcast(m)
-    text.persist()
 
     # perform the mapping and the reducing of each partition
     map_output = text.map(lambda x: bloom_filter.mapper(x, m_bloom.value[int(x[1]) - 1], k_bloom.value))
