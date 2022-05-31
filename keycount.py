@@ -26,17 +26,13 @@ def parse_input_lines(line):
     return movie_id, avg_rating
 
 
-def compute_m(text, sc, p):
+def compute_m(text, p):
     parsed_input = text.map(parse_input_lines)
-
-    # export the already cleaned dataset
-    parsed_input.saveAsTextFile("data/data_parsed")
 
     ones = parsed_input.map(lambda w: (w[1], 1))
     counts = ones.reduceByKey(lambda x, y: x + y)
     print("******* lens *******\n\n\n" + str(counts.collect()) + "\n\n\n*******************")
     lens = counts.map(lambda n: find_m(n, p))
-    counts.saveAsTextFile("data/lens")
 
     # get an array built this way:
     # a[i] = mi
