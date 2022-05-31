@@ -27,6 +27,15 @@ def parse_input_lines(line):
 
 
 def compute_m(text, p):
+
+    """
+
+    :param text: input data
+    :param p: number of fpr
+    :return: parsed input data, m
+            record of parsed input data ->    <movie_id, rounded avg_counter>
+            m -> array of 10 integers where 10 is number of possible ratings
+    """
     parsed_input = text.map(parse_input_lines)
 
     ones = parsed_input.map(lambda w: (w[1], 1))
@@ -37,9 +46,9 @@ def compute_m(text, p):
     # get an array built this way:
     # a[i] = mi
     # where i is the i-th bloom filter (we sort the array by key)
-    # m is the size of the i-th array
+    # m is the size of the i-th bloom filter
     lens = lens.sortByKey(ascending=True)
     print("******* lens *******\n\n\n" + str(lens.collect()) + "\n\n\n*******************")
-    # broadcast data so it is accessible by all workers
-    values = lens.values().collect()
-    return parsed_input, values
+
+    m_values = lens.values().collect()
+    return parsed_input, m_values

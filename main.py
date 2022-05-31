@@ -46,7 +46,6 @@ if __name__ == "__main__":
         print("specify a valid output path")
         sys.exit(-1)
 
-
     # find k in function of p
     k = compute_k(p)
 
