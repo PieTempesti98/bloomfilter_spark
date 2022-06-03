@@ -72,7 +72,6 @@ if __name__ == "__main__":
     aggregate_positions = map_output.reduceByKey(lambda x, y: x + y)
 
     # aggregate the results for each split
-    # aggregate_positions = aggregate_positions.reduceByKey(lambda x, y: x + y)
     aggregate_positions = aggregate_positions.sortByKey(ascending=True)
 
     # compute each bloom filter
@@ -84,11 +83,6 @@ if __name__ == "__main__":
     print("\n\n***** test phase *****")
     filters = bloom_filters.values().collect()
 
-    # print('\n\n')
-    #
-    # print("bloom filters " + str(filters))
-    #
-    # print('\n\n')
     false_positives = [0] * 10
     true_negatives = [0] * 10
     for row in text.collect():
