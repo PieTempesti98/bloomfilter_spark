@@ -24,7 +24,7 @@ These are the steps to create a virtual environment with all the needed packages
 
 3. install all the needed dependencies using *pip*
 
-    `pip3 install pyspark mmh3`
+    `pip3 install pyspark mmh3 venv-pack`
 
 4. zip the virtual environment in a *.tar.gz* archive
 
