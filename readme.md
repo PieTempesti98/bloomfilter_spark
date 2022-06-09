@@ -104,4 +104,9 @@ vote 8 --> false positives: 8837, false positive rate: 0.010116007262187402
 
 vote 9 --> false positives: 11843, false positive rate: 0.010266826525048092
 
-vote 10 --> false positives: 12337, false positive rate: 0.010021908963666214</code></pre>
+vote 10 --> false positives: 12337, false positive rate: 0.010021908963666214
+</code></pre>
+
+# The *Hadoop* implementation
+
+You can find our implementation of the bloom filter using Hadoop in [this repository](https://github.com/gabrielemarino-gm/Hadoop-BloomFilter)

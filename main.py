@@ -123,7 +123,11 @@ master = "yarn"
 
 if __name__ == "__main__":
 
+    # set the python environment as the uploaded virtual environment
     os.environ['PYSPARK_PYTHON'] = './environment/bin/python'
+
+    # input parameters handling
+    # correct format: [input path] [output path] [false positive rate]
     if len(sys.argv) != 4:
         print("Please specify the inputs as <input file> <output path> <false positive rate>")
         sys.exit(-1)
@@ -153,11 +157,14 @@ if __name__ == "__main__":
     # find k in function of p
     k = compute_k(p)
 
+    # spark configuration for the input archive
     config = SparkConf()
     config.set('spark.archives', 'pyspark_venv.tar.gz#environment')
     sc = SparkContext(master, "BloomFilter", conf=config)
+
     import mmh3
-    # import data   4 is the number of partitions
+
+    # import data
     text = sc.textFile(input_path, partitions)
 
     # broadcast the starting variables for the bloom filter creation
