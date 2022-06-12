@@ -172,11 +172,11 @@ if __name__ == "__main__":
     p_bloom = sc.broadcast(p)
     k_bloom = sc.broadcast(k)
 
-    # cache partition RDD since it's going to be reused later
-    text.persist()
-
     # Obtain the parsed dataset and the array of bloom filters' lengths
     text, m = compute_m(text, p_bloom.value)
+    
+    # cache parsed dataset since it's going to be reused later
+    text.persist()
 
     m_bloom = sc.broadcast(m)
 
